@@ -1,190 +1,708 @@
 <!DOCTYPE html>
-<html lang="ar">
-<head>
-  <meta charset="UTF-8">
-  <title>صفحة الموظف</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Zain:ital,wght@0,200;0,300;0,400;0,700;0,800;0,900;1,300;1,400&display=swap" rel="stylesheet">
-  <!-- تحميل مكتبة supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<html lang="ar" dir="rtl">
 
+<head>
+  <script src="https://unpkg.com/hijri-date/lib/safe.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام إدارة موظفين شركة سماو</title>
+  <!--مكتبة جوجل للخطوط-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zain:ital,wght@0,200;0,300;0,400;0,700;0,800;0,900;1,300;1,400&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
-    font-family: "Zain", sans-serif;
+      background-color: #f9f9f9;
       padding: 20px;
-      direction: rtl;
-      background-color: #f7f7f7;
+      font-family: "Zain", sans-serif;
     }
 
-    .form-group {
-      margin-bottom: 15px;
+    .card {
+      margin-bottom: 20px;
+      border-radius: 15px;
     }
 
-    label {
-      display: block;
-      margin-bottom: 5px;
+    .form-control,
+    .btn {
+      border-radius: 10px;
     }
 
-    input, select, button {
-      padding: 8px;
-      width: 100%;
-      box-sizing: border-box;
+    .table {
+      background: #fff;
     }
 
-    button {
-      background-color: #4CAF50;
+    th {
+      background-color: #007bff;
       color: white;
-      border: none;
-      cursor: pointer;
     }
-
-    button:hover {
-      background-color: #45a049;
+    .btn-outline-primary{
+        margin-bottom: 20px;
     }
-
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
+    .force-ltr {
+      direction: ltr !important;
+      unicode-bidi: plaintext !important;
+      font-family: monospace !important;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h2>إدخال ساعات العمل الإضافية</h2>
-
-    <div class="form-group">
-      <label for="from">من:</label>
-      <input type="datetime-local" id="from">
+    <h2 class="mb-4 text-center">نظام إدارة موظفين شركة سماو</h2>
+    
+    <!-- إدارة الموظفين -->
+    <div class="card p-4">
+      <h5>إضافة / حذف موظف</h5>
+      <div class="input-group mb-3">
+        <input id="employeeName" type="text" class="form-control" placeholder="اسم الموظف" />
+        <button class="btn btn-success" onclick="addEmployee()">إضافة</button>
+      </div>
+      <ul id="employeeList" class="list-group"></ul>
+    </div>
+<!-- إضافة اسم مستخدم وكلمة مرور للموظف -->
+<h6 class="mt-4">إنشاء حساب موظف</h6>
+<input id="newUser" class="form-control mb-2" placeholder="اسم المستخدم" />
+<input id="newPass" class="form-control mb-2" placeholder="كلمة المرور" type="password" />
+<button class="btn btn-outline-primary" onclick="createEmployeeUser()">إنشاء حساب </button>
+<br>
+    <!-- وحدة تحكم الإجازات -->
+    <div class="card p-4">
+      <h5>وحدة تحكم الإجازات</h5>
+      <select id="leaveEmployee" class="form-select mb-2"></select>
+      <input id="leaveTotal" type="number" class="form-control mb-2" placeholder="عدد الإجازات السنوية" />
+      <input id="leaveUsed" type="number" class="form-control mb-2" placeholder="عدد الإجازات المستهلكة" />
+      <button class="btn btn-primary" onclick="saveLeave()">تسجيل</button>
+      <table class="table table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>الموظف</th>
+            <th>الإجازات السنوية</th>
+            <th>المستهلكة</th>
+            <th>المتبقية</th>
+            <th>تعديل</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody id="leaveTable"></tbody>
+      </table>
     </div>
 
-    <div class="form-group">
-      <label for="to">إلى:</label>
-      <input type="datetime-local" id="to">
+    <!-- وحدة تحكم الساعات الإضافية -->
+    <div class="card p-4">
+      <h5>وحدة تحكم الساعات الإضافية</h5>
+      <select id="overtimeEmployee" class="form-select mb-2"></select>
+      <input id="overtimeDate" type="datetime-local" class="form-control mb-2" />
+      <input id="overtimeEnd" type="datetime-local" class="form-control mb-2" />
+      <input id="overtimeRequester" type="text" class="form-control mb-2" placeholder="من طلب العمل الإضافي" />
+      <input id="overtimeRate" type="number" class="form-control mb-2" placeholder="سعر الساعة بالريال" />
+      <input id="overtimeNote" type="text" class="form-control mb-2" placeholder="ملاحظات" />
+      <button class="btn btn-primary" onclick="saveOvertime()">تسجيل</button>
+      <table class="table table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>الموظف</th>
+            <th>من</th>
+            <th>إلى</th>
+            <th>عدد الساعات</th>
+            <th>سعر الساعة</th>
+            <th>المستحق</th>
+            <th>الطالب</th>
+            <th>ملاحظات</th>
+            <th>الاعتماد</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="overtimeTable"></tbody>
+      </table>
     </div>
 
-    <div class="form-group">
-      <label for="rate">الأجر بالساعة:</label>
-      <input type="number" id="rate">
-    </div>
+    <!-- التقرير الشهري -->
+    <div class="card p-4">
+      <h5>التقرير الشهري</h5>
+      <div class="row g-2 mb-2">
+        <div class="col-md-6">
+          <select id="reportEmployee" class="form-select">
+            <option disabled selected>اختر الموظف</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <select id="reportType" class="form-select">
+            <option disabled selected>اختر نوع السجل</option>
+            <option value="leaves">إجازات</option>
+            <option value="overtimes">ساعات إضافية</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-success mb-2" onclick="generateMonthlyReport()">عرض التقرير</button>
+      <button class="btn btn-outline-success mb-3" onclick="exportTableToExcel('monthlyReport', 'تقرير شهري')">تصدير Excel</button>
 
-    <div class="form-group">
-      <label for="requester">طلب من:</label>
-      <input type="text" id="requester">
+      <table id="monthlyReport" class="table table-bordered d-none">
+        <thead id="monthlyReportHead"></thead>
+        <tbody id="monthlyReportBody"></tbody>
+      </table>
     </div>
-
-    <div class="form-group">
-      <label for="approvedBy">تمت الموافقة من:</label>
-      <select id="approvedBy">
-        <option selected disabled>اختر المعتمد</option>
-        <option>مدير</option>
-        <option>نائب المدير</option>
-        <option>مساعد إداري</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="note">ملاحظات:</label>
-      <input type="text" id="note">
-    </div>
-
-    <button onclick="submitOvertime()">إرسال</button>
   </div>
 
   <script>
-    // بيانات Supabase
+    // تهيئة Supabase
     const SUPABASE_URL = "https://qqexzcvprhedogafyorf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZXh6Y3ZwcmhlZG9nYWZ5b3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNjczMzgsImV4cCI6MjA2MDY0MzMzOH0.RTogiMCAy5EdGmCsZYCXH4lgptD6bHbHZ8FybDPmna4";
-
-    // إنشاء عميل Supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // التحقق من تسجيل الدخول
-    window.onload = async function() {
-      const username = localStorage.getItem("username");
-      if (!username) {
-        window.location.href = "index.html";
-        return;
-      }
-    };
-
-    // دالة تنسيق التاريخ للنص الميلادي
-    function formatDateText(dateObj) {
-      const yyyy = dateObj.getFullYear();
-      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const dd = String(dateObj.getDate()).padStart(2, '0');
-      const hh = String(dateObj.getHours()).padStart(2, '0');
-      const min = String(dateObj.getMinutes()).padStart(2, '0');
+    // دالة عرض التاريخ الميلادي دائمًا من كائن Date (UTC)
+    function showIsoDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const yyyy = date.getUTCFullYear();
+      const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(date.getUTCDate()).padStart(2, '0');
+      const hh = String(date.getUTCHours()).padStart(2, '0');
+      const min = String(date.getUTCMinutes()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
     }
 
-    // دالة إرسال الساعات الإضافية
-    async function submitOvertime() {
+    // دالة تحويل التاريخ الميلادي إلى هجري
+    function toHijriString(dateStr) {
+      if (!dateStr) return '';
       try {
-        const from = new Date(document.getElementById("from").value);
-        const to = new Date(document.getElementById("to").value);
-        // حول التاريخين إلى نص ميلادي ثابت
-        const fromText = formatDateText(from);
-        const toText = formatDateText(to);
-        const rate = +document.getElementById("rate").value;
-        const requester = document.getElementById("requester").value;
-        const approvedBy = document.getElementById("approvedBy").value;
-        const note = document.getElementById("note").value;
+        const date = new Date(dateStr);
+        const hijri = new HijriDate(date);
+        const hy = hijri.getFullYear();
+        const hm = String(hijri.getMonth() + 1).padStart(2, '0');
+        const hd = String(hijri.getDate()).padStart(2, '0');
+        return `${hy}-${hm}-${hd}`;
+      } catch(e) { return ''; }
+    }
 
-        // التحقق من البيانات
-        if (!from || !to || !rate || !requester || !approvedBy) {
-          alert("يرجى ملء جميع الحقول المطلوبة");
-          return;
-        }
+    // دالة تصحيحية لعرض كل بيانات جدول الساعات الإضافية
+    async function debugFetchOvertimes() {
+      const { data, error } = await supabase.from('overtimes').select('*');
+      console.log('DEBUG: Fetched overtimes:', data, error);
+      let html = '';
+      if (data && data.length > 0) {
+        data.forEach(ot => {
+          html += `<tr>
+            <td>${ot.user_id}</td>
+            <td>${ot.name}</td>
+            <td><span class="force-ltr">${ot.from}</span></td>
+            <td><span class="force-ltr">${ot.to}</span></td>
+            <td>${ot.hours}</td>
+            <td>${ot.rate}</td>
+            <td>${ot.amount}</td>
+            <td>${ot.requester}</td>
+            <td>${ot.note}</td>
+            <td>${ot.approved_by}</td>
+          </tr>`;
+        });
+      } else {
+        html = `<tr><td colspan="10">لا توجد بيانات</td></tr>`;
+      }
+      const table = document.getElementById('overtimeTable');
+      if(table) table.innerHTML = html;
+    }
+    // استدعاء الدالة التصحيحية فورًا
+    debugFetchOvertimes();
 
-        if (from >= to) {
-          alert("يجب أن يكون وقت النهاية بعد وقت البداية");
-          return;
-        }
 
-        const hours = ((to - from) / 3600000).toFixed(2);
-        const amount = (rate * hours).toFixed(2);
+    // تحميل الصفحة
+    window.onload = async function() {
+      try {
+        console.log('Loading data...');
+        await renderEmployees();
+        await renderOvertimes();
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
 
-        const username = localStorage.getItem("username");
+    // إعداد الاستماع للتغييرات في الوقت الحقيقي
+    const subscription = supabase
+      .channel('public:overtimes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overtimes' }, payload => {
+        console.log('Database change detected:', payload);
+        renderOvertimes();
+      })
+      .subscribe();
 
-        const { error } = await supabase.from("overtimes").insert([{
-          name: username,
-          from: fromText,
-          to: toText,
-          hours: +hours,
-          rate,
-          amount: +amount,
-          requester,
-          approved_by: approvedBy,
-          note
-        }]);
+    // دالة عرض الموظفين
+    async function renderEmployees() {
+      try {
+        console.log('Loading employees...');
+        const employeeList = document.getElementById('employeeList');
+        const selects = document.querySelectorAll('select');
+
+        employeeList.innerHTML = '<li class="list-group-item">جاري تحميل قائمة الموظفين...</li>';
+        
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('role', 'employee');
 
         if (error) {
           console.error('Error:', error);
-          alert("حدث خطأ: " + error.message);
+          employeeList.innerHTML = '<li class="list-group-item text-danger">حدث خطأ في تحميل قائمة الموظفين</li>';
           return;
         }
 
-        alert("تم الإرسال بنجاح!");
-        clearForm();
+        // تحديث قائمة الموظفين
+        employeeList.innerHTML = '';
+        
+        // تحديث القوائم المنسدلة
+        selects.forEach(sel => {
+          if (sel.id !== 'reportType') {
+            sel.innerHTML = '<option value="" disabled selected>اختر موظف</option>';
+          }
+        });
+
+        if (users && users.length > 0) {
+          users.forEach(user => {
+            // إضافة للقائمة
+            employeeList.innerHTML += `
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${user.username}</span>
+                <div>
+                  <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${user.username}')">
+                    <i class="fas fa-trash"></i> حذف
+                  </button>
+                </div>
+              </li>`;
+            
+            // إضافة للقوائم المنسدلة
+            selects.forEach(sel => {
+              if (sel.id !== 'reportType') {
+                sel.innerHTML += `<option value="${user.username}">${user.username}</option>`;
+              }
+            });
+          });
+        } else {
+          employeeList.innerHTML = '<li class="list-group-item text-center">لا يوجد موظفين</li>';
+        }
       } catch (error) {
         console.error('Error:', error);
-        alert("حدث خطأ: " + error.message);
+        employeeList.innerHTML = '<li class="list-group-item text-danger">حدث خطأ في تحميل قائمة الموظفين</li>';
       }
     }
 
-    function clearForm() {
-      document.getElementById("from").value = "";
-      document.getElementById("to").value = "";
-      document.getElementById("rate").value = "";
-      document.getElementById("requester").value = "";
-      document.getElementById("approvedBy").selectedIndex = 0;
-      document.getElementById("note").value = "";
+    // دالة عرض الساعات الإضافية
+    async function renderOvertimes() {
+      const overtimeTable = document.getElementById('overtimeTable');
+      overtimeTable.innerHTML = '<tr><td colspan="10">جاري تحميل البيانات...</td></tr>';
+
+      try {
+        console.log('Fetching all overtimes...');
+        const { data, error } = await supabase
+          .from('overtimes')
+          .select('*')
+          .order('from', { ascending: false });
+
+        console.log('Overtimes response:', { data, error });
+
+        if (error) {
+          console.error('Error:', error);
+          overtimeTable.innerHTML = '<tr><td colspan="10">حدث خطأ في جلب البيانات</td></tr>';
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          overtimeTable.innerHTML = '<tr><td colspan="10">لا توجد بيانات للعرض</td></tr>';
+          return;
+        }
+
+        overtimeTable.innerHTML = '';
+        data.forEach((ot) => {
+          overtimeTable.innerHTML += `
+            <tr>
+              <td>${ot.name || ''}</td>
+              <td><span class="force-ltr">${ot.from}</span></td>
+              <td><span class="force-ltr">${ot.to}</span></td>
+              <td>${ot.hours ?? ''}</td>
+              <td>${ot.rate ?? ''}</td>
+              <td>${ot.amount ?? ''}</td>
+              <td>${ot.requester || ''}</td>
+              <td>${ot.note || ''}</td>
+              <td>${ot.approved_by || ''}</td>
+              <td>
+                <button class="btn btn-warning btn-sm" onclick="editOvertime('${ot.user_id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+              </td>
+              <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteOvertime('${ot.user_id}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>`;
+        });
+
+        // تحديث جدول التقرير الشهري
+        updateMonthlyReport(data);
+      } catch (error) {
+        console.error('Error:', error);
+        overtimeTable.innerHTML = '<tr><td colspan="10">حدث خطأ غير متوقع</td></tr>';
+      }
+    }
+
+    // دالة حذف موظف
+    async function deleteEmployee(username) {
+      if (!confirm(`هل أنت متأكد من حذف الموظف "${username}"؟`)) return;
+
+      try {
+        const { error } = await supabase
+          .from('users')
+          .delete()
+          .eq('username', username);
+
+        if (error) throw error;
+
+        alert('تم حذف الموظف بنجاح');
+        await renderEmployees();
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        alert('حدث خطأ في حذف الموظف');
+      }
+    }
+
+    // دالة إنشاء حساب موظف جديد
+    async function createEmployeeUser() {
+      const username = document.getElementById('newUser').value.trim();
+      const password = document.getElementById('newPass').value.trim();
+
+      if (!username || !password) {
+        alert('يرجى تعبئة اسم المستخدم وكلمة المرور');
+        return;
+      }
+
+      try {
+        // التحقق من وجود المستخدم
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('users')
+          .select('username')
+          .eq('username', username);
+
+        if (checkError) throw checkError;
+
+        if (existingUsers && existingUsers.length > 0) {
+          alert('اسم المستخدم موجود بالفعل');
+          return;
+        }
+
+        // إنشاء مستخدم جديد
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            username,
+            password,
+            role: 'employee',
+            created_at: new Date().toISOString()
+          }]);
+
+        if (insertError) throw insertError;
+
+        alert('تم إنشاء حساب الموظف بنجاح');
+        document.getElementById('newUser').value = '';
+        document.getElementById('newPass').value = '';
+        
+        await renderEmployees();
+      } catch (error) {
+        console.error('Error creating user:', error);
+        alert('حدث خطأ في إنشاء الحساب');
+      }
+    }
+
+    async function saveLeave() {
+      const name = document.getElementById('leaveEmployee').value;
+      const total = +document.getElementById('leaveTotal').value;
+      const used = +document.getElementById('leaveUsed').value;
+      const remaining = total - used;
+      const existing = leaves.find(l => l.name === name);
+      if (existing) {
+        Object.assign(existing, { total, used, remaining });
+      } else {
+        leaves.push({ name, total, used, remaining });
+      }
+      saveToStorage();
+      renderLeaves();
+      document.getElementById('leaveTotal').value = '';
+      document.getElementById('leaveUsed').value = '';
+    }
+
+    function renderLeaves() {
+      const body = document.getElementById('leaveTable');
+      body.innerHTML = '';
+      leaves.forEach((l, i) => {
+        body.innerHTML += `<tr><td>${l.name}</td><td>${l.total}</td><td>${l.used}</td><td>${l.remaining}</td>
+        <td><button class='btn btn-warning btn-sm' onclick='editLeave(${i})'>تعديل</button></td>
+        <td><button class='btn btn-danger btn-sm' onclick='deleteLeave(${i})'>حذف</button></td></tr>`;
+      });
+    }
+
+    function editLeave(index) {
+      const l = leaves[index];
+      document.getElementById('leaveEmployee').value = l.name;
+      document.getElementById('leaveTotal').value = l.total;
+      document.getElementById('leaveUsed').value = l.used;
+    }
+
+    function deleteLeave(index) {
+      if (confirm('تأكيد حذف السجل؟')) {
+        leaves.splice(index, 1);
+        saveToStorage();
+        renderLeaves();
+      }
+    }
+
+    async function deleteOvertime(id) {
+      if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+
+      try {
+        const { error } = await supabase
+          .from('overtimes')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        
+        alert('تم الحذف بنجاح');
+        renderOvertimes();
+      } catch (error) {
+        console.error('Error:', error);
+        alert('حدث خطأ في حذف البيانات');
+      }
+    }
+
+    async function editOvertime(id) {
+      try {
+        const { data, error } = await supabase
+          .from('overtimes')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+
+        document.getElementById('overtimeEmployee').value = data.name;
+        document.getElementById('overtimeDate').value = data.from.slice(0, 16);
+        document.getElementById('overtimeEnd').value = data.to.slice(0, 16);
+        document.getElementById('overtimeRequester').value = data.requester;
+        document.getElementById('overtimeRate').value = data.rate;
+        document.getElementById('overtimeNote').value = data.note || '';
+        
+        localStorage.setItem('editingOvertimeId', id);
+      } catch (error) {
+        console.error('Error:', error);
+        alert('حدث خطأ في تحميل البيانات للتعديل');
+      }
+    }
+
+    async function saveOvertime() {
+      const editingId = localStorage.getItem('editingOvertimeId');
+      const employee = document.getElementById('overtimeEmployee').value;
+      const from = new Date(document.getElementById('overtimeDate').value);
+      const to = new Date(document.getElementById('overtimeEnd').value);
+      const requester = document.getElementById('overtimeRequester').value;
+      const rate = +document.getElementById('overtimeRate').value;
+      const note = document.getElementById('overtimeNote').value;
+
+      const hours = ((to - from) / 3600000).toFixed(2);
+      const amount = (rate * hours).toFixed(2);
+
+      const overtimeData = {
+        name: employee,
+        from: from.toISOString(),
+        to: to.toISOString(),
+        hours: +hours,
+        rate,
+        amount: +amount,
+        requester,
+        note,
+        created_at: new Date().toISOString(),
+        created_by: 'admin'
+      };
+
+      try {
+        let error;
+        if (editingId) {
+          const { error: updateError } = await supabase
+            .from('overtimes')
+            .update(overtimeData)
+            .eq('id', editingId);
+          error = updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('overtimes')
+            .insert([overtimeData]);
+          error = insertError;
+        }
+
+        if (error) throw error;
+
+        alert(editingId ? 'تم التحديث بنجاح' : 'تم الحفظ بنجاح');
+        localStorage.removeItem('editingOvertimeId');
+        clearOvertimeForm();
+        await renderOvertimes();
+      } catch (error) {
+        console.error('Error:', error);
+        alert('حدث خطأ في حفظ البيانات');
+      }
+    }
+
+    function clearOvertimeForm() {
+      document.getElementById('overtimeEmployee').value = '';
+      document.getElementById('overtimeDate').value = '';
+      document.getElementById('overtimeEnd').value = '';
+      document.getElementById('overtimeRequester').value = '';
+      document.getElementById('overtimeRate').value = '';
+      document.getElementById('overtimeNote').value = '';
+    }
+
+    async function checkSupabaseConnection() {
+      try {
+        const { data, error } = await supabase
+          .from('overtimes')
+          .select('count')
+          .limit(1);
+        
+        if (error) {
+          console.error('Supabase connection error:', error);
+          alert('خطأ في الاتصال بقاعدة البيانات');
+          return false;
+        }
+        console.log('Supabase connected successfully');
+        return true;
+      } catch (error) {
+        console.error('Supabase connection error:', error);
+        alert('خطأ في الاتصال بقاعدة البيانات');
+        return false;
+      }
+    }
+
+    // دالة تحديث التقرير الشهري
+    function updateMonthlyReport(overtimes) {
+      const monthlyTable = document.getElementById('monthlyTable');
+      if (!monthlyTable) return;
+
+      try {
+        // تجميع البيانات حسب الموظف
+        const employeeData = {};
+        overtimes.forEach(ot => {
+          if (!employeeData[ot.name]) {
+            employeeData[ot.name] = {
+              totalHours: 0,
+              totalAmount: 0,
+              records: []
+            };
+          }
+          employeeData[ot.name].totalHours += parseFloat(ot.hours);
+          employeeData[ot.name].totalAmount += parseFloat(ot.amount);
+          employeeData[ot.name].records.push(ot);
+        });
+
+        // عرض البيانات في الجدول
+        monthlyTable.innerHTML = '';
+        Object.entries(employeeData).forEach(([name, data]) => {
+          monthlyTable.innerHTML += `
+            <tr>
+              <td>${name}</td>
+              <td>${data.totalHours.toFixed(2)}</td>
+              <td>${data.totalAmount.toFixed(2)}</td>
+              <td>${data.records.length}</td>
+            </tr>`;
+        });
+      } catch (error) {
+        console.error('Error updating monthly report:', error);
+      }
+    }
+
+    // دالة إنشاء التقرير الشهري
+    async function generateMonthlyReport() {
+      try {
+        console.log('Generating monthly report...');
+        const { data: overtimes, error } = await supabase
+          .from('overtimes')
+          .select('*')
+          .order('from', { ascending: false });
+
+        if (error) throw error;
+
+        if (!overtimes || overtimes.length === 0) {
+          alert('لا توجد بيانات للتقرير');
+          return;
+        }
+
+        // تجميع البيانات حسب الموظف
+        const employeeData = {};
+        overtimes.forEach(ot => {
+          if (!employeeData[ot.name]) {
+            employeeData[ot.name] = {
+              totalHours: 0,
+              totalAmount: 0,
+              records: []
+            };
+          }
+          employeeData[ot.name].totalHours += parseFloat(ot.hours);
+          employeeData[ot.name].totalAmount += parseFloat(ot.amount);
+          employeeData[ot.name].records.push(ot);
+        });
+
+        // إنشاء جدول التقرير
+        let reportTable = document.createElement('table');
+        reportTable.id = 'reportTable';
+        reportTable.className = 'table table-bordered';
+        reportTable.innerHTML = `
+          <thead>
+            <tr>
+              <th>الموظف</th>
+              <th>عدد الساعات</th>
+              <th>المبلغ الإجمالي</th>
+              <th>عدد المرات</th>
+            </tr>
+          </thead>
+          <tbody>
+        `;
+
+        Object.entries(employeeData).forEach(([name, data]) => {
+          reportTable.innerHTML += `
+            <tr>
+              <td>${name}</td>
+              <td>${data.totalHours.toFixed(2)}</td>
+              <td>${data.totalAmount.toFixed(2)}</td>
+              <td>${data.records.length}</td>
+            </tr>`;
+        });
+
+        reportTable.innerHTML += '</tbody>';
+
+        // إضافة الجدول مؤقتاً للصفحة
+        document.body.appendChild(reportTable);
+        
+        // تصدير إلى Excel
+        exportTableToExcel('reportTable', `تقرير_شهري_${new Date().toLocaleDateString('ar-SA')}`);
+        
+        // إزالة الجدول المؤقت
+        document.body.removeChild(reportTable);
+      } catch (error) {
+        console.error('Error generating report:', error);
+        alert('حدث خطأ في إنشاء التقرير');
+      }
+    }
+
+    // دالة تصدير الجدول إلى Excel
+    function exportTableToExcel(tableID, filename = 'تقرير') {
+      const downloadLink = document.createElement("a");
+      const table = document.getElementById(tableID);
+      const tableHTML = table.outerHTML.replace(/ /g, '%20');
+      
+      downloadLink.href = 'data:application/vnd.ms-excel,' + tableHTML;
+      downloadLink.download = filename + '.xls';
+      downloadLink.click();
     }
   </script>
+
+
+
 </body>
 </html>
