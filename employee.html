@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>صفحة الموظف</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zain:ital,wght@0,200;0,300;0,400;0,700;0,800;0,900;1,300;1,400&display=swap" rel="stylesheet">
+  <!-- تحميل مكتبة supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+    font-family: "Zain", sans-serif;
+      padding: 20px;
+      direction: rtl;
+      background-color: #f7f7f7;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input, select, button {
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>إدخال ساعات العمل الإضافية</h2>
+
+    <div class="form-group">
+      <label for="from">من:</label>
+      <input type="datetime-local" id="from">
+    </div>
+
+    <div class="form-group">
+      <label for="to">إلى:</label>
+      <input type="datetime-local" id="to">
+    </div>
+
+    <div class="form-group">
+      <label for="rate">الأجر بالساعة:</label>
+      <input type="number" id="rate">
+    </div>
+
+    <div class="form-group">
+      <label for="requester">طلب من:</label>
+      <input type="text" id="requester">
+    </div>
+
+    <div class="form-group">
+      <label for="approvedBy">تمت الموافقة من:</label>
+      <select id="approvedBy">
+        <option selected disabled>اختر المعتمد</option>
+        <option>مدير</option>
+        <option>نائب المدير</option>
+        <option>مساعد إداري</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="note">ملاحظات:</label>
+      <input type="text" id="note">
+    </div>
+
+    <button onclick="submitOvertime()">إرسال</button>
+  </div>
+
+  <script>
+    // بيانات Supabase
+    const SUPABASE_URL = "https://qqexzcvprhedogafyorf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZXh6Y3ZwcmhlZG9nYWZ5b3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNjczMzgsImV4cCI6MjA2MDY0MzMzOH0.RTogiMCAy5EdGmCsZYCXH4lgptD6bHbHZ8FybDPmna4";
+
+    // إنشاء عميل Supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // التحقق من تسجيل الدخول
+    window.onload = async function() {
+      const username = localStorage.getItem("username");
+      if (!username) {
+        window.location.href = "index.html";
+        return;
+      }
+    };
+
+    // دالة تنسيق التاريخ للنص الميلادي
+    function formatDateText(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      const hh = String(dateObj.getHours()).padStart(2, '0');
+      const min = String(dateObj.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    }
+
+    // دالة إرسال الساعات الإضافية
+    async function submitOvertime() {
+      try {
+        const from = new Date(document.getElementById("from").value);
+        const to = new Date(document.getElementById("to").value);
+        // حول التاريخين إلى نص ميلادي ثابت
+        const fromText = formatDateText(from);
+        const toText = formatDateText(to);
+        const rate = +document.getElementById("rate").value;
+        const requester = document.getElementById("requester").value;
+        const approvedBy = document.getElementById("approvedBy").value;
+        const note = document.getElementById("note").value;
+
+        // التحقق من البيانات
+        if (!from || !to || !rate || !requester || !approvedBy) {
+          alert("يرجى ملء جميع الحقول المطلوبة");
+          return;
+        }
+
+        if (from >= to) {
+          alert("يجب أن يكون وقت النهاية بعد وقت البداية");
+          return;
+        }
+
+        const hours = ((to - from) / 3600000).toFixed(2);
+        const amount = (rate * hours).toFixed(2);
+
+        const username = localStorage.getItem("username");
+
+        const { error } = await supabase.from("overtimes").insert([{
+          name: username,
+          from: fromText,
+          to: toText,
+          hours: +hours,
+          rate,
+          amount: +amount,
+          requester,
+          approved_by: approvedBy,
+          note
+        }]);
+
+        if (error) {
+          console.error('Error:', error);
+          alert("حدث خطأ: " + error.message);
+          return;
+        }
+
+        alert("تم الإرسال بنجاح!");
+        clearForm();
+      } catch (error) {
+        console.error('Error:', error);
+        alert("حدث خطأ: " + error.message);
+      }
+    }
+
+    function clearForm() {
+      document.getElementById("from").value = "";
+      document.getElementById("to").value = "";
+      document.getElementById("rate").value = "";
+      document.getElementById("requester").value = "";
+      document.getElementById("approvedBy").selectedIndex = 0;
+      document.getElementById("note").value = "";
+    }
+  </script>
+</body>
+</html>
