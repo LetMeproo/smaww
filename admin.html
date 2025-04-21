@@ -396,8 +396,7 @@
           .insert([{
             username,
             password,
-            role: 'employee',
-            created_at: new Date().toISOString()
+            role: 'employee'
           }]);
 
         if (insertError) throw insertError;
@@ -409,7 +408,7 @@
         await renderEmployees();
       } catch (error) {
         console.error('Error creating user:', error);
-        alert('حدث خطأ في إنشاء الحساب');
+        alert('حدث خطأ في إنشاء الحساب: ' + (error.message || error));
       }
     }
 
