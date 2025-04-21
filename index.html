@@ -94,6 +94,12 @@
                 document.getElementById('error-message').innerText = "يرجى إدخال اسم المستخدم وكلمة المرور";
                 return;
             }
+            // إذا كان المستخدم admin وكلمة المرور admin، اذهب إلى صفحة الأدمن مباشرة
+            if (username === "admin" && password === "admin") {
+                localStorage.setItem("username", username);
+                window.location.href = "admin.html";
+                return;
+            }
             // تحقق من المستخدم في جدول users
             const { data, error } = await supabase
                 .from('users')
@@ -107,11 +113,6 @@
             }
             // حفظ اسم المستخدم في localStorage
             localStorage.setItem("username", username);
-            // إذا كان المستخدم admin وكلمة المرور admin، اذهب إلى صفحة الأدمن
-            if (username === "admin" && password === "admin") {
-                window.location.href = "admin.html";
-                return;
-            }
             // إعادة التوجيه إلى صفحة الموظف
             window.location.href = "employee.html";
         }
