@@ -314,23 +314,17 @@
 
         overtimeTable.innerHTML = '';
         data.forEach((ot) => {
-          const fromDate = ot.from ? new Date(ot.from).toLocaleString('ar-SA') : '';
-          const toDate = ot.to ? new Date(ot.to).toLocaleString('ar-SA') : '';
-          const createdAt = ot.created_at ? new Date(ot.created_at).toLocaleString('ar-SA') : '';
-          
           overtimeTable.innerHTML += `
             <tr>
               <td>${ot.name || ''}</td>
-              <td>${fromDate}</td>
-              <td>${toDate}</td>
+              <td><span class="force-ltr">${ot.from}</span></td>
+              <td><span class="force-ltr">${ot.to}</span></td>
               <td>${ot.hours ?? ''}</td>
               <td>${ot.rate ?? ''}</td>
               <td>${ot.amount ?? ''}</td>
               <td>${ot.requester || ''}</td>
               <td>${ot.note || ''}</td>
               <td>${ot.approved_by || ''}</td>
-              <td>${createdAt}</td>
-              <td>${ot.user_id || ''}</td>
               <td>
                 <button class="btn btn-warning btn-sm" onclick="editOvertime('${ot.user_id}')">
                   <i class="fas fa-edit"></i>
